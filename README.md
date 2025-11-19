@@ -181,6 +181,25 @@ TREATMENT_GROUPS="control:sample1,sample2,sample3;treatment:sample4,sample5,samp
 
 This creates combined SingleM summaries for each treatment group at all taxonomic levels.
 
+### Skipping Pipeline Stages
+
+You can skip SingleM or Diamond stages if you've already run them or only need specific analyses:
+
+```bash
+# In your config.sh:
+
+# Skip SingleM (if you already have taxonomic profiles)
+SKIP_SINGLEM=true
+
+# Skip Diamond KEGG (if you only want taxonomic analysis)
+SKIP_DIAMOND=true
+```
+
+**Use cases:**
+- **SKIP_SINGLEM=true**: You already ran SingleM separately, only need KEGG annotation
+- **SKIP_DIAMOND=true**: You only need taxonomic profiling, not functional annotation
+- **Both false (default)**: Run complete pipeline
+
 ### Running Individual Steps
 
 You can also run individual pipeline steps:

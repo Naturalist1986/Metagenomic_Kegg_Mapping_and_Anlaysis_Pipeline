@@ -73,6 +73,12 @@ sbatch run_metagenomics_pipeline.sh config.sh
 
 That's it! The pipeline will run all steps automatically.
 
+**Pro tip:** You can skip stages in your config.sh:
+```bash
+SKIP_SINGLEM=true    # Skip SingleM if already run
+SKIP_DIAMOND=true    # Skip Diamond if you only want taxonomic analysis
+```
+
 ## Monitor Progress
 
 ```bash
