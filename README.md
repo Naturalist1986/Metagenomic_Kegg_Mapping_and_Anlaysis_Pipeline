@@ -118,12 +118,16 @@ git clone https://github.com/yourusername/Metagenomic_Kegg_Mapping_and_Anlaysis_
 cd Metagenomic_Kegg_Mapping_and_Anlaysis_Pipeline
 ```
 
-2. **Make scripts executable**
+2. **Run setup script**
 ```bash
-chmod +x run_metagenomics_pipeline.sh
-chmod +x scripts/*.sh
-chmod +x *.py
+chmod +x setup_pipeline.sh
+./setup_pipeline.sh
 ```
+
+This will:
+- Create the `logs/` directory (required for SLURM output)
+- Make all scripts executable
+- Verify directory structure
 
 3. **Create configuration file**
 ```bash
@@ -308,6 +312,11 @@ OUTPUT_BASE_DIR/
 ## Troubleshooting
 
 ### Common Issues
+
+**Issue:** `No log file created after sbatch`
+- **Solution:** The `logs/` directory must exist before submitting jobs
+- Run `./setup_pipeline.sh` to create it
+- Or manually: `mkdir -p logs`
 
 **Issue:** `No FASTQ files found`
 - **Solution:** Check that FASTQ files match expected naming patterns
