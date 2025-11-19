@@ -60,6 +60,9 @@ DIAMOND_ENV="metagenome_assembly"
 SKIP_SINGLEM=false          # Skip SingleM taxonomic profiling
 SKIP_DIAMOND=false          # Skip Diamond KEGG alignment
 
+# Auto-resume from completed stages (checks for existing output files)
+AUTO_RESUME=true            # Automatically detect and skip completed stages
+
 # Number of samples to process (auto-detected if not set)
 # Leave empty for automatic detection
 NUM_SAMPLES=""

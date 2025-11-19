@@ -181,9 +181,38 @@ TREATMENT_GROUPS="control:sample1,sample2,sample3;treatment:sample4,sample5,samp
 
 This creates combined SingleM summaries for each treatment group at all taxonomic levels.
 
-### Skipping Pipeline Stages
+### Auto-Resume from Completed Stages
 
-You can skip SingleM or Diamond stages if you've already run them or only need specific analyses:
+The pipeline can automatically detect completed stages and resume from where it left off:
+
+```bash
+# In your config.sh (enabled by default):
+AUTO_RESUME=true
+```
+
+**How it works:**
+- Before submitting jobs, checks if output files exist for all samples
+- If SingleM outputs exist (all samples), automatically skips SingleM stage
+- If Diamond outputs exist (all samples), automatically skips Diamond stage
+- Perfect for resuming after Diamond completes or pipeline interruptions
+
+**Example scenario:**
+```bash
+# Diamond just finished, you want to run post-processing
+sbatch run_metagenomics_pipeline.sh config.sh
+
+# Output:
+# Auto-resume enabled: Checking for completed stages...
+#   ✓ Found 16/16 completed SingleM outputs
+#   → Auto-skipping SingleM stage
+#   ✓ Found 16/16 completed Diamond outputs
+#   → Auto-skipping Diamond stage
+# Starting from Step 4: Post-Diamond processing...
+```
+
+### Manual Stage Control
+
+You can also manually skip stages regardless of completion status:
 
 ```bash
 # In your config.sh:
@@ -196,9 +225,9 @@ SKIP_DIAMOND=true
 ```
 
 **Use cases:**
-- **SKIP_SINGLEM=true**: You already ran SingleM separately, only need KEGG annotation
-- **SKIP_DIAMOND=true**: You only need taxonomic profiling, not functional annotation
-- **Both false (default)**: Run complete pipeline
+- **SKIP_SINGLEM=true**: Force skip SingleM, only need KEGG annotation
+- **SKIP_DIAMOND=true**: Force skip Diamond, only need taxonomic profiling
+- **AUTO_RESUME=true** (default): Automatically detect and skip completed stages
 
 ### Running Individual Steps
 

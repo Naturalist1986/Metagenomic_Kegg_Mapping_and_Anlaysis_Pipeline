@@ -106,6 +106,48 @@ SUMMARIZE_JOB_ID=""
 DIAMOND_JOB_ID=""
 
 ################################################################################
+# AUTO-RESUME: Check for completed stages
+################################################################################
+
+if [ "${AUTO_RESUME:-true}" = "true" ]; then
+    log_message "Auto-resume enabled: Checking for completed stages..."
+
+    # Check if SingleM is complete (unless already set to skip)
+    if [ "${SKIP_SINGLEM:-false}" != "true" ]; then
+        SINGLEM_OUTDIR="${OUTPUT_BASE_DIR}/singlem/output"
+        if [ -d "$SINGLEM_OUTDIR" ]; then
+            # Count completed SingleM outputs
+            COMPLETED_SINGLEM=$(ls -1 ${SINGLEM_OUTDIR}/*.tsv 2>/dev/null | wc -l)
+            if [ "$COMPLETED_SINGLEM" -eq "$NUM_SAMPLES" ]; then
+                log_message "  ✓ Found $COMPLETED_SINGLEM/$NUM_SAMPLES completed SingleM outputs"
+                log_message "  → Auto-skipping SingleM stage"
+                SKIP_SINGLEM=true
+            else
+                log_message "  ○ SingleM incomplete: $COMPLETED_SINGLEM/$NUM_SAMPLES samples"
+            fi
+        fi
+    fi
+
+    # Check if Diamond is complete (unless already set to skip)
+    if [ "${SKIP_DIAMOND:-false}" != "true" ]; then
+        DIAMOND_OUTDIR="${OUTPUT_BASE_DIR}/diamond_kegg"
+        if [ -d "$DIAMOND_OUTDIR" ]; then
+            # Count completed Diamond outputs
+            COMPLETED_DIAMOND=$(ls -1 ${DIAMOND_OUTDIR}/*.tsv.gz 2>/dev/null | wc -l)
+            if [ "$COMPLETED_DIAMOND" -eq "$NUM_SAMPLES" ]; then
+                log_message "  ✓ Found $COMPLETED_DIAMOND/$NUM_SAMPLES completed Diamond outputs"
+                log_message "  → Auto-skipping Diamond stage"
+                SKIP_DIAMOND=true
+            else
+                log_message "  ○ Diamond incomplete: $COMPLETED_DIAMOND/$NUM_SAMPLES samples"
+            fi
+        fi
+    fi
+
+    log_message "=========================================="
+fi
+
+################################################################################
 # STEP 1: SINGLEM TAXONOMIC PROFILING
 ################################################################################
 
