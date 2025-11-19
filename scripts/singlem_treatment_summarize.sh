@@ -60,29 +60,33 @@ if [ -z "${TREATMENT_GROUPS:-}" ]; then
     log_message "WARNING: TREATMENT_GROUPS not defined in config"
     log_message "Creating a single combined summary for all samples"
 
+    # Use the raw output directory (condensed profiles)
+    input_dir="${SINGLEM_OUTDIR}/output"
+
+    # Check if input directory exists and has files
+    if [ ! -d "$input_dir" ]; then
+        log_message "ERROR: Input directory not found: $input_dir"
+        log_message "Run SingleM step first!"
+        exit 1
+    fi
+
+    tsv_files=( ${input_dir}/*.tsv )
+    if [ ! -e "${tsv_files[0]}" ]; then
+        log_message "ERROR: No TSV files found in $input_dir"
+        exit 1
+    fi
+
+    log_message "Found ${#tsv_files[@]} samples to combine"
+
     # Process each taxonomic level
     for level in "${TAXONOMIC_LEVELS[@]}"; do
         log_message "Processing taxonomic level: $level"
 
-        input_dir="${SINGLEM_OUTDIR}/summarize_by${level}"
         output_file="${COMBINED_DIR}/all_samples_${level}.csv"
-
-        # Check if input directory exists and has files
-        if [ ! -d "$input_dir" ]; then
-            log_message "WARNING: Input directory not found: $input_dir"
-            continue
-        fi
-
-        tsv_files=( ${input_dir}/*.tsv )
-        if [ ! -e "${tsv_files[0]}" ]; then
-            log_message "WARNING: No TSV files found in $input_dir"
-            continue
-        fi
-
-        log_message "Found ${#tsv_files[@]} samples for level: $level"
         log_message "Creating combined summary: $output_file"
 
         # Run SingleM summarise for all samples at this level
+        # Use the raw taxonomic profiles from output/ directory
         singlem summarise \
             --input-taxonomic-profile ${input_dir}/*.tsv \
             --output-species-by-site-relative-abundance "$output_file" \
@@ -99,6 +103,16 @@ else
     # Process by treatment groups
     log_message "Processing samples by treatment groups"
 
+    # Use the raw output directory (condensed profiles)
+    input_dir="${SINGLEM_OUTDIR}/output"
+
+    # Check if input directory exists
+    if [ ! -d "$input_dir" ]; then
+        log_message "ERROR: Input directory not found: $input_dir"
+        log_message "Run SingleM step first!"
+        exit 1
+    fi
+
     # Parse treatment groups (format: "group1:sample1,sample2;group2:sample3,sample4")
     IFS=';' read -ra GROUPS <<< "$TREATMENT_GROUPS"
 
@@ -112,37 +126,38 @@ else
         # Convert comma-separated samples to array
         IFS=',' read -ra SAMPLES <<< "$sample_list"
 
+        # Build list of input files for this group (from raw output directory)
+        input_files=()
+        for sample in "${SAMPLES[@]}"; do
+            # Trim whitespace
+            sample=$(echo "$sample" | xargs)
+            tsv_file="${input_dir}/${sample}.tsv"
+
+            if [ -e "$tsv_file" ]; then
+                input_files+=("$tsv_file")
+            else
+                log_message "  WARNING: File not found for sample $sample: $tsv_file"
+            fi
+        done
+
+        # Check if we have any files for this group
+        if [ ${#input_files[@]} -eq 0 ]; then
+            log_message "  ERROR: No input files found for group $group_name"
+            log_message "  Check sample names match SingleM output files"
+            continue
+        fi
+
+        log_message "  Found ${#input_files[@]} samples for group: $group_name"
+
         # Process each taxonomic level for this treatment group
         for level in "${TAXONOMIC_LEVELS[@]}"; do
-            log_message "  Level: $level"
+            log_message "    Level: $level"
 
-            input_dir="${SINGLEM_OUTDIR}/summarize_by${level}"
             output_file="${COMBINED_DIR}/${group_name}_${level}.csv"
-
-            # Build list of input files for this group
-            input_files=()
-            for sample in "${SAMPLES[@]}"; do
-                # Trim whitespace
-                sample=$(echo "$sample" | xargs)
-                tsv_file="${input_dir}/${sample}.tsv"
-
-                if [ -e "$tsv_file" ]; then
-                    input_files+=("$tsv_file")
-                else
-                    log_message "    WARNING: File not found for sample $sample: $tsv_file"
-                fi
-            done
-
-            # Check if we have any files for this group
-            if [ ${#input_files[@]} -eq 0 ]; then
-                log_message "    WARNING: No input files found for group $group_name at level $level"
-                continue
-            fi
-
-            log_message "    Found ${#input_files[@]} samples for group: $group_name"
             log_message "    Creating: $output_file"
 
             # Run SingleM summarise for this treatment group
+            # Use the raw taxonomic profiles from output/ directory
             singlem summarise \
                 --input-taxonomic-profile "${input_files[@]}" \
                 --output-species-by-site-relative-abundance "$output_file" \
