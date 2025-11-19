@@ -73,10 +73,19 @@ sbatch run_metagenomics_pipeline.sh config.sh
 
 That's it! The pipeline will run all steps automatically.
 
-**Pro tip:** You can skip stages in your config.sh:
+**Pro tips:**
+
+**Auto-Resume** (enabled by default):
+- Pipeline automatically detects completed stages
+- Just re-run the same command after Diamond finishes
+- It will skip completed stages and continue from post-processing
+
+**Manual control:**
 ```bash
-SKIP_SINGLEM=true    # Skip SingleM if already run
-SKIP_DIAMOND=true    # Skip Diamond if you only want taxonomic analysis
+# In config.sh:
+AUTO_RESUME=true     # Auto-detect completed stages (default)
+SKIP_SINGLEM=true    # Force skip SingleM
+SKIP_DIAMOND=true    # Force skip Diamond
 ```
 
 ## Monitor Progress
