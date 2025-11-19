@@ -51,21 +51,41 @@ source "$CONFIG_FILE"
 log_message "Configuration loaded from: $CONFIG_FILE"
 
 # Validate required variables from config
-required_vars=(
-    "FASTQ_DIR"
-    "OUTPUT_BASE_DIR"
-    "SINGLEM_METAPACKAGE_PATH"
-    "KEGG_DB_PATH"
-    "KEGG_DAT_FILE"
-    "PIPELINE_DIR"
-)
+# Always required
+if [ -z "${FASTQ_DIR:-}" ]; then
+    log_message "ERROR: FASTQ_DIR not set in config file"
+    exit 1
+fi
 
-for var in "${required_vars[@]}"; do
-    if [ -z "${!var:-}" ]; then
-        log_message "ERROR: Required variable $var not set in config file"
+if [ -z "${OUTPUT_BASE_DIR:-}" ]; then
+    log_message "ERROR: OUTPUT_BASE_DIR not set in config file"
+    exit 1
+fi
+
+if [ -z "${PIPELINE_DIR:-}" ]; then
+    log_message "ERROR: PIPELINE_DIR not set in config file"
+    exit 1
+fi
+
+# Only required if SingleM is not skipped
+if [ "${SKIP_SINGLEM:-false}" != "true" ]; then
+    if [ -z "${SINGLEM_METAPACKAGE_PATH:-}" ]; then
+        log_message "ERROR: SINGLEM_METAPACKAGE_PATH not set (required when SKIP_SINGLEM is not true)"
         exit 1
     fi
-done
+fi
+
+# Only required if Diamond is not skipped
+if [ "${SKIP_DIAMOND:-false}" != "true" ]; then
+    if [ -z "${KEGG_DB_PATH:-}" ]; then
+        log_message "ERROR: KEGG_DB_PATH not set (required when SKIP_DIAMOND is not true)"
+        exit 1
+    fi
+    if [ -z "${KEGG_DAT_FILE:-}" ]; then
+        log_message "ERROR: KEGG_DAT_FILE not set (required when SKIP_DIAMOND is not true)"
+        exit 1
+    fi
+fi
 
 # Create log directory
 mkdir -p logs
@@ -80,127 +100,164 @@ fi
 
 log_message "Found $NUM_SAMPLES samples to process"
 
+# Initialize variables for job dependencies
+SINGLEM_JOB_ID=""
+SUMMARIZE_JOB_ID=""
+DIAMOND_JOB_ID=""
+
 ################################################################################
 # STEP 1: SINGLEM TAXONOMIC PROFILING
 ################################################################################
 
-log_message "=========================================="
-log_message "STEP 1: Running SingleM Taxonomic Profiling"
-log_message "=========================================="
+if [ "${SKIP_SINGLEM:-false}" = "true" ]; then
+    log_message "=========================================="
+    log_message "STEP 1: SingleM - SKIPPED (SKIP_SINGLEM=true)"
+    log_message "=========================================="
+    log_message "STEP 2: SingleM Summarization - SKIPPED"
+    log_message "=========================================="
+else
+    log_message "=========================================="
+    log_message "STEP 1: Running SingleM Taxonomic Profiling"
+    log_message "=========================================="
 
-SINGLEM_JOB_ID=$(sbatch \
-    --parsable \
-    --array=0-$((NUM_SAMPLES-1)) \
-    --output=logs/singlem_%A_%a.out \
-    --error=logs/singlem_%A_%a.err \
-    ${PIPELINE_DIR}/scripts/run_singlem_step.sh ${CONFIG_FILE})
+    SINGLEM_JOB_ID=$(sbatch \
+        --parsable \
+        --array=0-$((NUM_SAMPLES-1)) \
+        --output=logs/singlem_%A_%a.out \
+        --error=logs/singlem_%A_%a.err \
+        ${PIPELINE_DIR}/scripts/run_singlem_step.sh ${CONFIG_FILE})
 
-log_message "SingleM job submitted: Job ID $SINGLEM_JOB_ID"
+    log_message "SingleM job submitted: Job ID $SINGLEM_JOB_ID"
 
-################################################################################
-# STEP 2: SINGLEM TREATMENT GROUP SUMMARIZATION
-################################################################################
+    ############################################################################
+    # STEP 2: SINGLEM TREATMENT GROUP SUMMARIZATION
+    ############################################################################
 
-log_message "=========================================="
-log_message "STEP 2: SingleM Treatment Group Summarization"
-log_message "=========================================="
+    log_message "=========================================="
+    log_message "STEP 2: SingleM Treatment Group Summarization"
+    log_message "=========================================="
 
-SUMMARIZE_JOB_ID=$(sbatch \
-    --parsable \
-    --dependency=afterok:${SINGLEM_JOB_ID} \
-    --output=logs/singlem_summarize_%j.out \
-    --error=logs/singlem_summarize_%j.err \
-    ${PIPELINE_DIR}/scripts/singlem_treatment_summarize.sh ${CONFIG_FILE})
+    SUMMARIZE_JOB_ID=$(sbatch \
+        --parsable \
+        --dependency=afterok:${SINGLEM_JOB_ID} \
+        --output=logs/singlem_summarize_%j.out \
+        --error=logs/singlem_summarize_%j.err \
+        ${PIPELINE_DIR}/scripts/singlem_treatment_summarize.sh ${CONFIG_FILE})
 
-log_message "SingleM summarization job submitted: Job ID $SUMMARIZE_JOB_ID"
+    log_message "SingleM summarization job submitted: Job ID $SUMMARIZE_JOB_ID"
+fi
 
 ################################################################################
 # STEP 3: DIAMOND KEGG ALIGNMENT
 ################################################################################
 
-log_message "=========================================="
-log_message "STEP 3: Running Diamond KEGG Alignment"
-log_message "=========================================="
+if [ "${SKIP_DIAMOND:-false}" = "true" ]; then
+    log_message "=========================================="
+    log_message "STEP 3: Diamond KEGG - SKIPPED (SKIP_DIAMOND=true)"
+    log_message "=========================================="
+else
+    log_message "=========================================="
+    log_message "STEP 3: Running Diamond KEGG Alignment"
+    log_message "=========================================="
 
-DIAMOND_JOB_ID=$(sbatch \
-    --parsable \
-    --array=0-$((NUM_SAMPLES-1)) \
-    --dependency=afterok:${SINGLEM_JOB_ID} \
-    --output=logs/diamond_%A_%a.out \
-    --error=logs/diamond_%A_%a.err \
-    ${PIPELINE_DIR}/scripts/run_diamond_step.sh ${CONFIG_FILE})
+    # Set dependency based on whether SingleM was run
+    if [ -n "$SINGLEM_JOB_ID" ]; then
+        DEPENDENCY="--dependency=afterok:${SINGLEM_JOB_ID}"
+    else
+        DEPENDENCY=""
+    fi
 
-log_message "Diamond job submitted: Job ID $DIAMOND_JOB_ID"
+    DIAMOND_JOB_ID=$(sbatch \
+        --parsable \
+        --array=0-$((NUM_SAMPLES-1)) \
+        $DEPENDENCY \
+        --output=logs/diamond_%A_%a.out \
+        --error=logs/diamond_%A_%a.err \
+        ${PIPELINE_DIR}/scripts/run_diamond_step.sh ${CONFIG_FILE})
+
+    log_message "Diamond job submitted: Job ID $DIAMOND_JOB_ID"
+fi
 
 ################################################################################
 # STEP 4: POST-DIAMOND KEGG PROCESSING
 ################################################################################
 
-log_message "=========================================="
-log_message "STEP 4: Post-Diamond KEGG Hit Processing"
-log_message "=========================================="
+# Only run KEGG processing steps if Diamond was run
+if [ -z "$DIAMOND_JOB_ID" ]; then
+    log_message "=========================================="
+    log_message "STEP 4-7: KEGG Processing - SKIPPED (Diamond not run)"
+    log_message "=========================================="
+    AFTER_DIAMOND_JOB_ID=""
+    SUM_KEGG_JOB_ID=""
+    MEAN_SC_JOB_ID=""
+    NORMALIZE_JOB_ID=""
+else
+    log_message "=========================================="
+    log_message "STEP 4: Post-Diamond KEGG Hit Processing"
+    log_message "=========================================="
 
-AFTER_DIAMOND_JOB_ID=$(sbatch \
-    --parsable \
-    --array=0-$((NUM_SAMPLES-1)) \
-    --dependency=afterok:${DIAMOND_JOB_ID} \
-    --output=logs/after_diamond_%A_%a.out \
-    --error=logs/after_diamond_%A_%a.err \
-    ${PIPELINE_DIR}/scripts/run_after_diamond_step.sh ${CONFIG_FILE})
+    AFTER_DIAMOND_JOB_ID=$(sbatch \
+        --parsable \
+        --array=0-$((NUM_SAMPLES-1)) \
+        --dependency=afterok:${DIAMOND_JOB_ID} \
+        --output=logs/after_diamond_%A_%a.out \
+        --error=logs/after_diamond_%A_%a.err \
+        ${PIPELINE_DIR}/scripts/run_after_diamond_step.sh ${CONFIG_FILE})
 
-log_message "After-Diamond processing job submitted: Job ID $AFTER_DIAMOND_JOB_ID"
+    log_message "After-Diamond processing job submitted: Job ID $AFTER_DIAMOND_JOB_ID"
 
-################################################################################
-# STEP 5: SUM KEGG HITS
-################################################################################
+    ############################################################################
+    # STEP 5: SUM KEGG HITS
+    ############################################################################
 
-log_message "=========================================="
-log_message "STEP 5: Summing KEGG Hits"
-log_message "=========================================="
+    log_message "=========================================="
+    log_message "STEP 5: Summing KEGG Hits"
+    log_message "=========================================="
 
-SUM_KEGG_JOB_ID=$(sbatch \
-    --parsable \
-    --array=0-$((NUM_SAMPLES-1)) \
-    --dependency=afterok:${AFTER_DIAMOND_JOB_ID} \
-    --output=logs/sum_kegg_%A_%a.out \
-    --error=logs/sum_kegg_%A_%a.err \
-    ${PIPELINE_DIR}/scripts/run_sum_kegg_step.sh ${CONFIG_FILE})
+    SUM_KEGG_JOB_ID=$(sbatch \
+        --parsable \
+        --array=0-$((NUM_SAMPLES-1)) \
+        --dependency=afterok:${AFTER_DIAMOND_JOB_ID} \
+        --output=logs/sum_kegg_%A_%a.out \
+        --error=logs/sum_kegg_%A_%a.err \
+        ${PIPELINE_DIR}/scripts/run_sum_kegg_step.sh ${CONFIG_FILE})
 
-log_message "Sum KEGG hits job submitted: Job ID $SUM_KEGG_JOB_ID"
+    log_message "Sum KEGG hits job submitted: Job ID $SUM_KEGG_JOB_ID"
 
-################################################################################
-# STEP 6: CALCULATE MEAN SINGLE COPY GENES
-################################################################################
+    ############################################################################
+    # STEP 6: CALCULATE MEAN SINGLE COPY GENES
+    ############################################################################
 
-log_message "=========================================="
-log_message "STEP 6: Calculating Mean Single-Copy Genes"
-log_message "=========================================="
+    log_message "=========================================="
+    log_message "STEP 6: Calculating Mean Single-Copy Genes"
+    log_message "=========================================="
 
-MEAN_SC_JOB_ID=$(sbatch \
-    --parsable \
-    --dependency=afterok:${SUM_KEGG_JOB_ID} \
-    --output=logs/mean_single_copy_%j.out \
-    --error=logs/mean_single_copy_%j.err \
-    ${PIPELINE_DIR}/scripts/run_mean_single_copy_step.sh ${CONFIG_FILE})
+    MEAN_SC_JOB_ID=$(sbatch \
+        --parsable \
+        --dependency=afterok:${SUM_KEGG_JOB_ID} \
+        --output=logs/mean_single_copy_%j.out \
+        --error=logs/mean_single_copy_%j.err \
+        ${PIPELINE_DIR}/scripts/run_mean_single_copy_step.sh ${CONFIG_FILE})
 
-log_message "Mean single-copy calculation job submitted: Job ID $MEAN_SC_JOB_ID"
+    log_message "Mean single-copy calculation job submitted: Job ID $MEAN_SC_JOB_ID"
 
-################################################################################
-# STEP 7: CREATE NORMALIZED FEATURE TABLE
-################################################################################
+    ############################################################################
+    # STEP 7: CREATE NORMALIZED FEATURE TABLE
+    ############################################################################
 
-log_message "=========================================="
-log_message "STEP 7: Creating Normalized Feature Table"
-log_message "=========================================="
+    log_message "=========================================="
+    log_message "STEP 7: Creating Normalized Feature Table"
+    log_message "=========================================="
 
-NORMALIZE_JOB_ID=$(sbatch \
-    --parsable \
-    --dependency=afterok:${MEAN_SC_JOB_ID} \
-    --output=logs/normalize_%j.out \
-    --error=logs/normalize_%j.err \
-    ${PIPELINE_DIR}/scripts/run_normalize_step.sh ${CONFIG_FILE})
+    NORMALIZE_JOB_ID=$(sbatch \
+        --parsable \
+        --dependency=afterok:${MEAN_SC_JOB_ID} \
+        --output=logs/normalize_%j.out \
+        --error=logs/normalize_%j.err \
+        ${PIPELINE_DIR}/scripts/run_normalize_step.sh ${CONFIG_FILE})
 
-log_message "Normalization job submitted: Job ID $NORMALIZE_JOB_ID"
+    log_message "Normalization job submitted: Job ID $NORMALIZE_JOB_ID"
+fi
 
 ################################################################################
 # PIPELINE SUMMARY
@@ -210,13 +267,26 @@ log_message "=========================================="
 log_message "PIPELINE SUBMISSION COMPLETE"
 log_message "=========================================="
 log_message "Job dependency chain:"
-log_message "  1. SingleM:              $SINGLEM_JOB_ID"
-log_message "  2. SingleM Summarize:    $SUMMARIZE_JOB_ID"
-log_message "  3. Diamond KEGG:         $DIAMOND_JOB_ID"
-log_message "  4. After Diamond:        $AFTER_DIAMOND_JOB_ID"
-log_message "  5. Sum KEGG Hits:        $SUM_KEGG_JOB_ID"
-log_message "  6. Mean Single-Copy:     $MEAN_SC_JOB_ID"
-log_message "  7. Normalize:            $NORMALIZE_JOB_ID"
+
+if [ -n "$SINGLEM_JOB_ID" ]; then
+    log_message "  1. SingleM:              $SINGLEM_JOB_ID"
+    log_message "  2. SingleM Summarize:    $SUMMARIZE_JOB_ID"
+else
+    log_message "  1. SingleM:              SKIPPED"
+    log_message "  2. SingleM Summarize:    SKIPPED"
+fi
+
+if [ -n "$DIAMOND_JOB_ID" ]; then
+    log_message "  3. Diamond KEGG:         $DIAMOND_JOB_ID"
+    log_message "  4. After Diamond:        $AFTER_DIAMOND_JOB_ID"
+    log_message "  5. Sum KEGG Hits:        $SUM_KEGG_JOB_ID"
+    log_message "  6. Mean Single-Copy:     $MEAN_SC_JOB_ID"
+    log_message "  7. Normalize:            $NORMALIZE_JOB_ID"
+else
+    log_message "  3. Diamond KEGG:         SKIPPED"
+    log_message "  4-7. KEGG Processing:    SKIPPED"
+fi
+
 log_message ""
 log_message "Monitor progress with: squeue -u $USER"
 log_message "Check logs in: logs/"

@@ -56,6 +56,10 @@ DIAMOND_ENV="metagenome_assembly"
 # PROCESSING PARAMETERS
 # ============================================================================
 
+# Skip pipeline stages (set to "true" to skip, "false" or empty to run)
+SKIP_SINGLEM=false          # Skip SingleM taxonomic profiling
+SKIP_DIAMOND=false          # Skip Diamond KEGG alignment
+
 # Number of samples to process (auto-detected if not set)
 # Leave empty for automatic detection
 NUM_SAMPLES=""
