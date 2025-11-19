@@ -181,6 +181,36 @@ TREATMENT_GROUPS="control:sample1,sample2,sample3;treatment:sample4,sample5,samp
 
 This creates combined SingleM summaries for each treatment group at all taxonomic levels.
 
+### Controlling Concurrent Jobs
+
+Limit the number of jobs running simultaneously to manage cluster resources:
+
+```bash
+# In your config.sh:
+MAX_CONCURRENT_JOBS=10    # Run max 10 jobs at once per stage
+```
+
+**How it works:**
+- Applies to array jobs (SingleM, Diamond, post-processing)
+- Uses SLURM's `%` syntax: `--array=0-15%10` = max 10 concurrent
+- Empty or unset = no limit (all jobs run in parallel)
+
+**Use cases:**
+- **Large datasets** (100+ samples): Set to 10-20 to avoid overwhelming the queue
+- **Cluster policies**: Some clusters limit concurrent jobs per user
+- **Resource management**: Control load on shared filesystems
+
+**Example:**
+```bash
+# 50 samples, max 10 jobs at once
+MAX_CONCURRENT_JOBS=10
+
+# Pipeline will run:
+# - Jobs 0-9 first
+# - As each finishes, next job starts
+# - Max 10 running at any time
+```
+
 ### Auto-Resume from Completed Stages
 
 The pipeline can automatically detect completed stages and resume from where it left off:

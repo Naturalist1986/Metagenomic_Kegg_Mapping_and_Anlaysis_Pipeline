@@ -70,6 +70,12 @@ NUM_SAMPLES=""
 # Array offset (usually 0)
 ARRAY_OFFSET=0
 
+# Maximum number of concurrent jobs per array stage
+# Limits how many jobs run simultaneously (e.g., "10" = max 10 jobs at once)
+# Leave empty for no limit (all jobs can run in parallel)
+# Example: MAX_CONCURRENT_JOBS=10
+MAX_CONCURRENT_JOBS=""
+
 # SingleM threads per sample
 SINGLEM_THREADS=32
 
