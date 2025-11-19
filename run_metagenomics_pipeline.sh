@@ -100,6 +100,15 @@ fi
 
 log_message "Found $NUM_SAMPLES samples to process"
 
+# Build array specification with optional concurrent job limit
+if [ -n "${MAX_CONCURRENT_JOBS:-}" ] && [ "${MAX_CONCURRENT_JOBS}" -gt 0 ]; then
+    ARRAY_SPEC="0-$((NUM_SAMPLES-1))%${MAX_CONCURRENT_JOBS}"
+    log_message "Concurrent job limit: ${MAX_CONCURRENT_JOBS} jobs at a time"
+else
+    ARRAY_SPEC="0-$((NUM_SAMPLES-1))"
+    log_message "Concurrent job limit: None (all jobs can run in parallel)"
+fi
+
 # Initialize variables for job dependencies
 SINGLEM_JOB_ID=""
 SUMMARIZE_JOB_ID=""
@@ -164,7 +173,7 @@ else
 
     SINGLEM_JOB_ID=$(sbatch \
         --parsable \
-        --array=0-$((NUM_SAMPLES-1)) \
+        --array=${ARRAY_SPEC} \
         --output=logs/singlem_%A_%a.out \
         --error=logs/singlem_%A_%a.err \
         ${PIPELINE_DIR}/scripts/run_singlem_step.sh ${CONFIG_FILE})
@@ -211,7 +220,7 @@ else
 
     DIAMOND_JOB_ID=$(sbatch \
         --parsable \
-        --array=0-$((NUM_SAMPLES-1)) \
+        --array=${ARRAY_SPEC} \
         $DEPENDENCY \
         --output=logs/diamond_%A_%a.out \
         --error=logs/diamond_%A_%a.err \
@@ -240,7 +249,7 @@ else
 
     AFTER_DIAMOND_JOB_ID=$(sbatch \
         --parsable \
-        --array=0-$((NUM_SAMPLES-1)) \
+        --array=${ARRAY_SPEC} \
         --dependency=afterok:${DIAMOND_JOB_ID} \
         --output=logs/after_diamond_%A_%a.out \
         --error=logs/after_diamond_%A_%a.err \
@@ -258,7 +267,7 @@ else
 
     SUM_KEGG_JOB_ID=$(sbatch \
         --parsable \
-        --array=0-$((NUM_SAMPLES-1)) \
+        --array=${ARRAY_SPEC} \
         --dependency=afterok:${AFTER_DIAMOND_JOB_ID} \
         --output=logs/sum_kegg_%A_%a.out \
         --error=logs/sum_kegg_%A_%a.err \

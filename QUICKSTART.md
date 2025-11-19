@@ -83,10 +83,16 @@ That's it! The pipeline will run all steps automatically.
 **Manual control:**
 ```bash
 # In config.sh:
-AUTO_RESUME=true     # Auto-detect completed stages (default)
-SKIP_SINGLEM=true    # Force skip SingleM
-SKIP_DIAMOND=true    # Force skip Diamond
+AUTO_RESUME=true         # Auto-detect completed stages (default)
+SKIP_SINGLEM=true        # Force skip SingleM
+SKIP_DIAMOND=true        # Force skip Diamond
+MAX_CONCURRENT_JOBS=10   # Limit concurrent jobs (optional)
 ```
+
+**Resource management:**
+- Set `MAX_CONCURRENT_JOBS=10` to run max 10 jobs at once
+- Useful for large datasets or cluster policies
+- Leave empty for no limit
 
 ## Monitor Progress
 
