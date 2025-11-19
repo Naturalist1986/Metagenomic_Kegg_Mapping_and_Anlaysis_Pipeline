@@ -18,11 +18,14 @@ git clone https://github.com/yourusername/Metagenomic_Kegg_Mapping_and_Anlaysis_
 cd Metagenomic_Kegg_Mapping_and_Anlaysis_Pipeline
 ```
 
-### 2. Make Scripts Executable
+### 2. Run Setup Script
 
 ```bash
-chmod +x run_metagenomics_pipeline.sh scripts/*.sh *.py
+chmod +x setup_pipeline.sh
+./setup_pipeline.sh
 ```
+
+This creates the `logs/` directory and makes all scripts executable.
 
 ### 3. Create Configuration File
 
