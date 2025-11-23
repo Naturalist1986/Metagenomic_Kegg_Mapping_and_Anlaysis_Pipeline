@@ -114,7 +114,7 @@ conda install pandas numpy openpyxl tqdm
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/Metagenomic_Kegg_Mapping_and_Anlaysis_Pipeline.git
+git clone https://github.com/Naturalist1986/Metagenomic_Kegg_Mapping_and_Anlaysis_Pipeline.git
 cd Metagenomic_Kegg_Mapping_and_Anlaysis_Pipeline
 ```
 

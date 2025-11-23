@@ -14,7 +14,7 @@ Get your metagenomics pipeline running in 5 minutes!
 ### 1. Clone and Enter Directory
 
 ```bash
-git clone https://github.com/yourusername/Metagenomic_Kegg_Mapping_and_Anlaysis_Pipeline.git
+git clone https://github.com/Naturalist1986/Metagenomic_Kegg_Mapping_and_Anlaysis_Pipeline.git
 cd Metagenomic_Kegg_Mapping_and_Anlaysis_Pipeline
 ```
 
