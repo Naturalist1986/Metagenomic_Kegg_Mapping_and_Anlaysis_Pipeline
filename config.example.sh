@@ -91,6 +91,12 @@ DIAMOND_THREADS=30
 # Example: DIAMOND_BLOCK_SIZE=4.0
 DIAMOND_BLOCK_SIZE=""
 
+# Diamond memory allocation (SLURM --mem parameter)
+# Adjust based on your sample sizes and available cluster resources
+# Examples: 256G, 512G, 768G, 1T
+# Default: 512G
+DIAMOND_MEMORY="512G"
+
 # Keep QC-filtered FASTQ files after Diamond processing
 # Set to "true" to keep files, "false" to delete after use
 KEEP_QC_FILES=false

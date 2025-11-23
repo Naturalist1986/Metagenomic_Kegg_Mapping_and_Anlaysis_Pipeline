@@ -221,10 +221,13 @@ else
     DIAMOND_JOB_ID=$(sbatch \
         --parsable \
         --array=${ARRAY_SPEC} \
+        --mem=${DIAMOND_MEMORY:-512G} \
         $DEPENDENCY \
         --output=logs/diamond_%A_%a.out \
         --error=logs/diamond_%A_%a.err \
         ${PIPELINE_DIR}/scripts/run_diamond_step.sh ${CONFIG_FILE})
+
+    log_message "  Memory allocated: ${DIAMOND_MEMORY:-512G}"
 
     log_message "Diamond job submitted: Job ID $DIAMOND_JOB_ID"
 fi
