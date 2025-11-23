@@ -229,18 +229,27 @@ run_diamond() {
 
     log_message "Running Diamond on $(basename $input_file)..."
 
-    diamond blastx \
-        --query "$input_file" \
-        --db "$KEGG_DB_PATH" \
+    # Build Diamond command with optional block size
+    DIAMOND_CMD="diamond blastx \
+        --query $input_file \
+        --db $KEGG_DB_PATH \
         --max-target-seqs 1 \
         --evalue 1e-5 \
         --verbose \
-        --tmpdir "$DIAMOND_TMP" \
-        --out "$output_file" \
+        --tmpdir $DIAMOND_TMP \
+        --out $output_file \
         --threads $thread_count \
         --outfmt 6 \
         --sensitive \
-        --ignore-warnings
+        --ignore-warnings"
+
+    # Add block size if configured (helps with memory management)
+    if [ -n "${DIAMOND_BLOCK_SIZE:-}" ]; then
+        DIAMOND_CMD="$DIAMOND_CMD --block-size ${DIAMOND_BLOCK_SIZE}"
+        log_message "  Using block size: ${DIAMOND_BLOCK_SIZE}"
+    fi
+
+    eval "$DIAMOND_CMD"
 
     if [ $? -ne 0 ]; then
         log_message "ERROR: Diamond failed for $(basename $input_file)"

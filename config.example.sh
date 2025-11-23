@@ -85,6 +85,12 @@ TRIMMOMATIC_THREADS=32
 # Diamond threads per sample
 DIAMOND_THREADS=30
 
+# Diamond block size (memory management)
+# Lower value = less memory usage but slower
+# Recommended: 2.0-6.0 for large files, leave empty for default
+# Example: DIAMOND_BLOCK_SIZE=4.0
+DIAMOND_BLOCK_SIZE=""
+
 # Keep QC-filtered FASTQ files after Diamond processing
 # Set to "true" to keep files, "false" to delete after use
 KEEP_QC_FILES=false
