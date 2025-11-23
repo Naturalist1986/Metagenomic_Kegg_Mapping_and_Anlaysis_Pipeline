@@ -404,6 +404,12 @@ OUTPUT_BASE_DIR/
 - **Solution:** Ensure KEGG database is in Diamond format (.dmnd)
 - Run `diamond makedb` if needed
 
+**Issue:** `Diamond fails with "Error: vector::reserve"`
+- **Solution:** Memory allocation failure - reduce memory usage
+- Set `DIAMOND_BLOCK_SIZE=3.0` in config.sh (reduces memory usage)
+- Or increase memory: `DIAMOND_MEMORY="768G"` in config.sh
+- Or reduce concurrent jobs: `MAX_CONCURRENT_JOBS=5`
+
 **Issue:** `Conda environment not found`
 - **Solution:** Verify environment names in config.sh match your conda environments
 - Run `conda env list` to check

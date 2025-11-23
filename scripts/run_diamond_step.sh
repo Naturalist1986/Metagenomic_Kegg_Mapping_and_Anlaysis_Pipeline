@@ -3,7 +3,7 @@
 #SBATCH -N 1
 #SBATCH -t 7-0
 #SBATCH -c 32
-#SBATCH --mem=512G
+# Memory is set dynamically via sbatch --mem in main pipeline script
 
 ################################################################################
 # Diamond KEGG Alignment Step (with Trimmomatic preprocessing)
