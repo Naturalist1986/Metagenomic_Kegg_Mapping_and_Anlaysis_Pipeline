@@ -222,12 +222,14 @@ else
         --parsable \
         --array=${ARRAY_SPEC} \
         --mem=${DIAMOND_MEMORY:-512G} \
+        --time=${DIAMOND_TIME:-7-0} \
         $DEPENDENCY \
         --output=logs/diamond_%A_%a.out \
         --error=logs/diamond_%A_%a.err \
         ${PIPELINE_DIR}/scripts/run_diamond_step.sh ${CONFIG_FILE})
 
     log_message "  Memory allocated: ${DIAMOND_MEMORY:-512G}"
+    log_message "  Time limit: ${DIAMOND_TIME:-7-0}"
 
     log_message "Diamond job submitted: Job ID $DIAMOND_JOB_ID"
 fi

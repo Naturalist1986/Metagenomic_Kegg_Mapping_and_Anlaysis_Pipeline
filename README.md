@@ -410,6 +410,12 @@ OUTPUT_BASE_DIR/
 - Or increase memory: `DIAMOND_MEMORY="768G"` in config.sh
 - Or reduce concurrent jobs: `MAX_CONCURRENT_JOBS=5`
 
+**Issue:** `Diamond job timeout or queue priority issues`
+- **Solution:** Adjust time limit to match your cluster queue policies
+- Set `DIAMOND_TIME="48:00:00"` for 2 days (faster queue)
+- Or `DIAMOND_TIME="3-0"` for 3 days
+- Default is `DIAMOND_TIME="7-0"` (7 days)
+
 **Issue:** `Conda environment not found`
 - **Solution:** Verify environment names in config.sh match your conda environments
 - Run `conda env list` to check

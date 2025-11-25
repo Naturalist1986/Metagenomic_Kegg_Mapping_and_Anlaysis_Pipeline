@@ -1,9 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=diamond_kegg
 #SBATCH -N 1
-#SBATCH -t 7-0
 #SBATCH -c 32
-# Memory is set dynamically via sbatch --mem in main pipeline script
+# Memory and time are set dynamically via sbatch --mem and --time in main pipeline script
 
 ################################################################################
 # Diamond KEGG Alignment Step (with Trimmomatic preprocessing)
