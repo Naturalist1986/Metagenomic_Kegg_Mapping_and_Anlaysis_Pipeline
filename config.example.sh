@@ -97,6 +97,13 @@ DIAMOND_BLOCK_SIZE=""
 # Default: 512G
 DIAMOND_MEMORY="512G"
 
+# Diamond time limit (SLURM --time parameter)
+# Adjust based on sample size and cluster queue availability
+# Format: days-hours:minutes:seconds or hours:minutes:seconds
+# Examples: 7-0 (7 days), 3-12:00:00 (3.5 days), 48:00:00 (2 days)
+# Default: 7-0 (7 days)
+DIAMOND_TIME="7-0"
+
 # Keep QC-filtered FASTQ files after Diamond processing
 # Set to "true" to keep files, "false" to delete after use
 KEEP_QC_FILES=false
