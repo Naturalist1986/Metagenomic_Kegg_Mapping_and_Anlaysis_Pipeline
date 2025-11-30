@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 def process_tsv_file(args):
     file_name, tsv_folder, kegg_stats_data, progress_queue = args
-    run_accession = file_name.replace('-kegg_hits_summed.tsv', '')  # Extract run_accession from file name
+    run_accession = file_name.replace('_kegg_hits_summed.tsv', '')  # Extract run_accession from file name
 
     try:
         # Check if run_accession exists in KEGG stats
@@ -104,7 +104,7 @@ def normalize_kegg_hits(tsv_folder, kegg_stats_path, output_file):
             all_kegg_numbers.add(kegg_number)
 
     # Ensure all KEGG numbers are accounted for in all run_accessions
-    all_run_accessions = [file_name.replace('-kegg_hits_summed.tsv', '') for file_name in tsv_files]
+    all_run_accessions = [file_name.replace('_kegg_hits_summed.tsv', '') for file_name in tsv_files]
     for kegg_number in all_kegg_numbers:
         for run_accession in all_run_accessions:
             if run_accession not in combined_results[kegg_number]:
@@ -128,7 +128,7 @@ def main():
         description='Normalize KEGG hits by genome counts from stats file'
     )
     parser.add_argument('--input-dir', required=True,
-                       help='Directory containing -kegg_hits_summed.tsv files')
+                       help='Directory containing _kegg_hits_summed.tsv files')
     parser.add_argument('--kegg-stats', required=True,
                        help='Excel file with run_accession and num_genomes columns')
     parser.add_argument('--output', required=True,
