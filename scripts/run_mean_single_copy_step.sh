@@ -58,7 +58,7 @@ if [ -f "$OUTPUT_FILE" ]; then
     rm -f "$OUTPUT_FILE"
 fi
 
-# Update the mean_single_copy.py script with current paths
+# Locate the mean_single_copy.py script
 MEAN_SC_SCRIPT="${PIPELINE_DIR}/mean_single_copy.py"
 
 if [ ! -f "$MEAN_SC_SCRIPT" ]; then
@@ -66,26 +66,18 @@ if [ ! -f "$MEAN_SC_SCRIPT" ]; then
     exit 1
 fi
 
-# Create a temporary modified version of the script with updated paths
-TEMP_SCRIPT="/tmp/mean_single_copy_temp_${SLURM_JOB_ID:-$$}.py"
-
-# Update the input/output directories in the script
-sed -e "s|^input_dir = .*|input_dir = \"${SUM_KEGG_DIR}/\"|" \
-    -e "s|^output_file = .*|output_file = \"${OUTPUT_FILE}\"|" \
-    "$MEAN_SC_SCRIPT" > "$TEMP_SCRIPT"
-
+log_message "Input directory: $SUM_KEGG_DIR"
+log_message "Output file: $OUTPUT_FILE"
+log_message ""
 log_message "Running mean single-copy gene calculation..."
 
-python "$TEMP_SCRIPT"
+# Run the script with command-line arguments
+python3 "$MEAN_SC_SCRIPT" --input-dir "$SUM_KEGG_DIR" --output "$OUTPUT_FILE"
 
 if [ $? -ne 0 ]; then
     log_message "ERROR: Mean single-copy calculation failed"
-    rm -f "$TEMP_SCRIPT"
     exit 1
 fi
-
-# Clean up temp script
-rm -f "$TEMP_SCRIPT"
 
 # Verify output exists
 if [ -f "$OUTPUT_FILE" ] && [ -s "$OUTPUT_FILE" ]; then

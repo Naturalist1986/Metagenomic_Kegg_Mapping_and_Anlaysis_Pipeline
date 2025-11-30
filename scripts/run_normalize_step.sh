@@ -61,7 +61,7 @@ if [ -f "$OUTPUT_FILE" ]; then
     rm -f "$OUTPUT_FILE"
 fi
 
-# Update the normalization script with current paths
+# Locate the normalization script
 NORMALIZE_SCRIPT="${PIPELINE_DIR}/make_normalized_feature_table.py"
 
 if [ ! -f "$NORMALIZE_SCRIPT" ]; then
@@ -69,31 +69,22 @@ if [ ! -f "$NORMALIZE_SCRIPT" ]; then
     exit 1
 fi
 
-# Create a temporary modified version of the script with updated paths
-TEMP_SCRIPT="/tmp/normalize_temp_${SLURM_JOB_ID:-$$}.py"
-
-# Update the paths in the script
-sed -e "s|^input_folder = .*|input_folder = \"${SUM_KEGG_DIR}/\"|" \
-    -e "s|^kegg_stats_file = .*|kegg_stats_file = \"${KEGG_STATS_FILE}\"|" \
-    -e "s|^output_file_path = .*|output_file_path = \"${OUTPUT_FILE}\"|" \
-    "$NORMALIZE_SCRIPT" > "$TEMP_SCRIPT"
-
 log_message "Input directory: $SUM_KEGG_DIR"
 log_message "KEGG stats file: $KEGG_STATS_FILE"
 log_message "Output file: $OUTPUT_FILE"
 log_message ""
 log_message "Running normalization..."
 
-python "$TEMP_SCRIPT"
+# Run the script with command-line arguments
+python3 "$NORMALIZE_SCRIPT" \
+    --input-dir "$SUM_KEGG_DIR" \
+    --kegg-stats "$KEGG_STATS_FILE" \
+    --output "$OUTPUT_FILE"
 
 if [ $? -ne 0 ]; then
     log_message "ERROR: Normalization failed"
-    rm -f "$TEMP_SCRIPT"
     exit 1
 fi
-
-# Clean up temp script
-rm -f "$TEMP_SCRIPT"
 
 # Verify output exists
 if [ -f "$OUTPUT_FILE" ] && [ -s "$OUTPUT_FILE" ]; then
