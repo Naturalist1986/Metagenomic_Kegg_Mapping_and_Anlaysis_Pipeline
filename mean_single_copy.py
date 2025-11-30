@@ -40,7 +40,7 @@ def process_file(file_path):
     try:
         # Extract run_accession from filename (remove the suffix)
         filename = os.path.basename(file_path)
-        run_accession = filename.replace('-kegg_hits_summed.tsv', '')
+        run_accession = filename.replace('_kegg_hits_summed.tsv', '')
         
         # 1. Skip empty files
         if os.stat(file_path).st_size == 0:
@@ -82,7 +82,7 @@ def process_file(file_path):
     except Exception as e:
         print(f"Error processing file {file_path}: {e}")
         filename = os.path.basename(file_path)
-        run_accession = filename.replace('-kegg_hits_summed.tsv', '')
+        run_accession = filename.replace('_kegg_hits_summed.tsv', '')
         return {
             'run_accession': run_accession,
             'num_genomes': None
@@ -94,7 +94,7 @@ def main():
         description='Calculate mean single-copy gene counts from KEGG-annotated TSV files'
     )
     parser.add_argument('--input-dir', required=True,
-                       help='Directory containing -kegg_hits_summed.tsv files')
+                       help='Directory containing _kegg_hits_summed.tsv files')
     parser.add_argument('--output', required=True,
                        help='Output Excel file path (e.g., kegg_stats.xlsx)')
 
@@ -112,11 +112,11 @@ def main():
     files = [
         os.path.join(input_dir, f)
         for f in os.listdir(input_dir)
-        if f.endswith('-kegg_hits_summed.tsv')
+        if f.endswith('_kegg_hits_summed.tsv')
     ]
 
     if not files:
-        print(f"WARNING: No files matching pattern '*-kegg_hits_summed.tsv' found in {input_dir}")
+        print(f"WARNING: No files matching pattern '*_kegg_hits_summed.tsv' found in {input_dir}")
         return 1
 
     print(f"Found {len(files)} files to process")
