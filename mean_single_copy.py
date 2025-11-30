@@ -1,12 +1,20 @@
+#!/usr/bin/env python3
+"""
+Calculate mean single-copy gene counts from KEGG-annotated TSV files
+
+This script:
+1. Reads summed KEGG hit TSV files from a directory
+2. Filters for single-copy KEGG genes
+3. Calculates the mean count for each file (representing estimated genome count)
+4. Outputs results to an Excel file
+"""
+
 import os
+import argparse
 import pandas as pd
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor
 from tqdm import tqdm  # For progress indication
-
-# Directory containing the TSV files
-input_dir = "/sci/backup/ofinkel/moshea/Efrat_Metagenomes_kegg_coverage_summed/"
-output_file = "/sci/backup/ofinkel/moshea/Efrat_Metagenomes_kegg_coverage_summed/kegg_stats.xlsx"
 
 # Single-copy KEGG genes of interest
 kegg_numbers = [
@@ -80,26 +88,56 @@ def process_file(file_path):
             'num_genomes': None
         }
 
-if __name__ == "__main__":
+def main():
+    """Main function to process command-line arguments and run the pipeline"""
+    parser = argparse.ArgumentParser(
+        description='Calculate mean single-copy gene counts from KEGG-annotated TSV files'
+    )
+    parser.add_argument('--input-dir', required=True,
+                       help='Directory containing -kegg_hits_summed.tsv files')
+    parser.add_argument('--output', required=True,
+                       help='Output Excel file path (e.g., kegg_stats.xlsx)')
+
+    args = parser.parse_args()
+
+    input_dir = args.input_dir
+    output_file = args.output
+
+    # Validate input directory
+    if not os.path.isdir(input_dir):
+        print(f"ERROR: Input directory does not exist: {input_dir}")
+        return 1
+
     # Collect files
     files = [
-        os.path.join(input_dir, f) 
-        for f in os.listdir(input_dir) 
+        os.path.join(input_dir, f)
+        for f in os.listdir(input_dir)
         if f.endswith('-kegg_hits_summed.tsv')
     ]
-    
+
+    if not files:
+        print(f"WARNING: No files matching pattern '*-kegg_hits_summed.tsv' found in {input_dir}")
+        return 1
+
+    print(f"Found {len(files)} files to process")
+
     # Process in parallel
     results = []
     with ProcessPoolExecutor() as executor:
         for result in tqdm(
-            executor.map(process_file, files), 
-            total=len(files), 
+            executor.map(process_file, files),
+            total=len(files),
             desc="Processing Files"
         ):
             results.append(result)
-    
+
     # Convert to a DataFrame and save
     results_df = pd.DataFrame(results)
     results_df.to_excel(output_file, index=False)
     print(f"\nProcessed {len(results_df)} files")
     print(f"Results saved to: {output_file}")
+
+    return 0
+
+if __name__ == "__main__":
+    exit(main())

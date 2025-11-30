@@ -271,6 +271,70 @@ sbatch --array=0-N scripts/run_singlem_step.sh config.sh
 sbatch --array=0-N scripts/run_diamond_step.sh config.sh
 ```
 
+### Running Python Scripts Standalone
+
+All Python post-processing scripts accept command-line arguments for flexible usage:
+
+#### 1. Process Diamond Output (`process_single_diamond.py`)
+Extracts KEGG hits from Diamond BLASTX output.
+
+```bash
+python3 process_single_diamond.py \
+  --input diamond_output.tsv.gz \
+  --output kegg_hits.tsv \
+  --kegg prokaryotes.dat
+```
+
+**Arguments:**
+- `--input`: Diamond BLASTX output file (tsv or tsv.gz)
+- `--output`: Output file (qseqid, kegg_number, num_hits)
+- `--kegg`: KEGG database annotation file (prokaryotes.dat)
+
+#### 2. Sum KEGG Hits (`sum_kegg_hits.py`)
+Aggregates KEGG hits per KO number.
+
+```bash
+python3 sum_kegg_hits.py \
+  --input kegg_hits.tsv \
+  --output kegg_hits_summed.tsv
+```
+
+**Arguments:**
+- `--input`: Input Diamond KEGG hits file
+- `--output`: Output file for summed KEGG hits
+
+#### 3. Calculate Genome Equivalents (`mean_single_copy.py`)
+Calculates mean single-copy gene abundance for genome equivalent estimation.
+
+```bash
+python3 mean_single_copy.py \
+  --input-dir /path/to/summed_kegg_files/ \
+  --output kegg_stats.xlsx
+```
+
+**Arguments:**
+- `--input-dir`: Directory containing `-kegg_hits_summed.tsv` files
+- `--output`: Output Excel file (e.g., kegg_stats.xlsx)
+
+**Output:** Excel file with `run_accession` and `num_genomes` columns
+
+#### 4. Normalize Feature Table (`make_normalized_feature_table.py`)
+Normalizes KEGG hits by genome equivalents.
+
+```bash
+python3 make_normalized_feature_table.py \
+  --input-dir /path/to/summed_kegg_files/ \
+  --kegg-stats kegg_stats.xlsx \
+  --output normalized_kegg_results.tsv
+```
+
+**Arguments:**
+- `--input-dir`: Directory containing `-kegg_hits_summed.tsv` files
+- `--kegg-stats`: Excel file with run_accession and num_genomes columns
+- `--output`: Output TSV file for normalized results
+
+**Output:** TSV feature table with KEGG numbers as rows and samples as columns
+
 ## Input Data
 
 ### FASTQ Files

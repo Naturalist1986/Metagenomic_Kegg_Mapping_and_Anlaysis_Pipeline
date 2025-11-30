@@ -1,4 +1,16 @@
+#!/usr/bin/env python3
+"""
+Normalize KEGG hits by genome counts
+
+This script:
+1. Reads KEGG stats file (containing run_accession and num_genomes)
+2. Processes TSV files with KEGG hits
+3. Normalizes hits by dividing by num_genomes
+4. Outputs a normalized feature table
+"""
+
 import os
+import argparse
 import pandas as pd
 from multiprocessing import Pool, Manager
 from tqdm import tqdm
@@ -110,10 +122,38 @@ def normalize_kegg_hits(tsv_folder, kegg_stats_path, output_file):
     # Save the result to the output file
     result_df.to_csv(output_file, sep='\t', index=False, float_format='%.6f')
 
-# Define paths
-input_folder = "/sci/backup/ofinkel/moshea/Efrat_Metagenomes_kegg_coverage_summed/"  # Replace with the path to the folder containing TSV files
-kegg_stats_file = "/sci/backup/ofinkel/moshea/Efrat_Metagenomes_kegg_coverage_summed/kegg_stats.xlsx"  # Replace with the path to the KEGG stats Excel file
-output_file_path = "/sci/backup/ofinkel/moshea/Efrat_Metagenomes_Novogene/normalized_kegg_results.tsv"  # Replace with the desired output file path
+def main():
+    """Main function to process command-line arguments and run normalization"""
+    parser = argparse.ArgumentParser(
+        description='Normalize KEGG hits by genome counts from stats file'
+    )
+    parser.add_argument('--input-dir', required=True,
+                       help='Directory containing -kegg_hits_summed.tsv files')
+    parser.add_argument('--kegg-stats', required=True,
+                       help='Excel file with run_accession and num_genomes columns')
+    parser.add_argument('--output', required=True,
+                       help='Output TSV file for normalized results')
 
-# Call the function
-normalize_kegg_hits(input_folder, kegg_stats_file, output_file_path)
+    args = parser.parse_args()
+
+    # Validate input directory
+    if not os.path.isdir(args.input_dir):
+        print(f"ERROR: Input directory does not exist: {args.input_dir}")
+        return 1
+
+    # Validate KEGG stats file
+    if not os.path.isfile(args.kegg_stats):
+        print(f"ERROR: KEGG stats file does not exist: {args.kegg_stats}")
+        return 1
+
+    # Call the normalization function
+    try:
+        normalize_kegg_hits(args.input_dir, args.kegg_stats, args.output)
+        print(f"\nNormalization complete! Results saved to: {args.output}")
+        return 0
+    except Exception as e:
+        print(f"ERROR: {e}")
+        return 1
+
+if __name__ == "__main__":
+    exit(main())
