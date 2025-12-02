@@ -4,6 +4,7 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=128G
 #SBATCH --time=1-00:00:00
+##SBATCH --account=ACCOUNT_NAME
 
 ################################################################################
 # Post-Diamond KEGG Hit Processing Step

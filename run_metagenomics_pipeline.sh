@@ -5,6 +5,7 @@
 #SBATCH --time=7-00:00:00
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=4
+##SBATCH --account=ACCOUNT_NAME
 
 ################################################################################
 # METAGENOMICS KEGG MAPPING AND ANALYSIS PIPELINE
@@ -49,6 +50,14 @@ fi
 
 source "$CONFIG_FILE"
 log_message "Configuration loaded from: $CONFIG_FILE"
+
+# Set up SLURM account parameter if specified
+if [ -n "${SLURM_ACCOUNT:-}" ]; then
+    ACCOUNT_ARG="--account=${SLURM_ACCOUNT}"
+    log_message "SLURM account specified: $SLURM_ACCOUNT"
+else
+    ACCOUNT_ARG=""
+fi
 
 # Validate required variables from config
 # Always required
@@ -176,6 +185,7 @@ else
         --array=${ARRAY_SPEC} \
         --output=logs/singlem_%A_%a.out \
         --error=logs/singlem_%A_%a.err \
+        $ACCOUNT_ARG \
         ${PIPELINE_DIR}/scripts/run_singlem_step.sh ${CONFIG_FILE})
 
     log_message "SingleM job submitted: Job ID $SINGLEM_JOB_ID"
@@ -193,6 +203,7 @@ else
         --dependency=afterok:${SINGLEM_JOB_ID} \
         --output=logs/singlem_summarize_%j.out \
         --error=logs/singlem_summarize_%j.err \
+        $ACCOUNT_ARG \
         ${PIPELINE_DIR}/scripts/singlem_treatment_summarize.sh ${CONFIG_FILE})
 
     log_message "SingleM summarization job submitted: Job ID $SUMMARIZE_JOB_ID"
@@ -226,6 +237,7 @@ else
         $DEPENDENCY \
         --output=logs/diamond_%A_%a.out \
         --error=logs/diamond_%A_%a.err \
+        $ACCOUNT_ARG \
         ${PIPELINE_DIR}/scripts/run_diamond_step.sh ${CONFIG_FILE})
 
     log_message "  Memory allocated: ${DIAMOND_MEMORY:-512G}"
@@ -258,6 +270,7 @@ else
         --dependency=afterok:${DIAMOND_JOB_ID} \
         --output=logs/after_diamond_%A_%a.out \
         --error=logs/after_diamond_%A_%a.err \
+        $ACCOUNT_ARG \
         ${PIPELINE_DIR}/scripts/run_after_diamond_step.sh ${CONFIG_FILE})
 
     log_message "After-Diamond processing job submitted: Job ID $AFTER_DIAMOND_JOB_ID"
@@ -276,6 +289,7 @@ else
         --dependency=afterok:${AFTER_DIAMOND_JOB_ID} \
         --output=logs/sum_kegg_%A_%a.out \
         --error=logs/sum_kegg_%A_%a.err \
+        $ACCOUNT_ARG \
         ${PIPELINE_DIR}/scripts/run_sum_kegg_step.sh ${CONFIG_FILE})
 
     log_message "Sum KEGG hits job submitted: Job ID $SUM_KEGG_JOB_ID"
@@ -293,6 +307,7 @@ else
         --dependency=afterok:${SUM_KEGG_JOB_ID} \
         --output=logs/mean_single_copy_%j.out \
         --error=logs/mean_single_copy_%j.err \
+        $ACCOUNT_ARG \
         ${PIPELINE_DIR}/scripts/run_mean_single_copy_step.sh ${CONFIG_FILE})
 
     log_message "Mean single-copy calculation job submitted: Job ID $MEAN_SC_JOB_ID"
@@ -310,6 +325,7 @@ else
         --dependency=afterok:${MEAN_SC_JOB_ID} \
         --output=logs/normalize_%j.out \
         --error=logs/normalize_%j.err \
+        $ACCOUNT_ARG \
         ${PIPELINE_DIR}/scripts/run_normalize_step.sh ${CONFIG_FILE})
 
     log_message "Normalization job submitted: Job ID $NORMALIZE_JOB_ID"
