@@ -4,6 +4,7 @@
 #SBATCH -c 8
 #SBATCH -t 2:00:00
 #SBATCH --mem=16G
+##SBATCH --account=ACCOUNT_NAME
 
 ################################################################################
 # SingleM Treatment Group Summarization

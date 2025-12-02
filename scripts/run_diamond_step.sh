@@ -2,6 +2,7 @@
 #SBATCH --job-name=diamond_kegg
 #SBATCH -N 1
 #SBATCH -c 32
+##SBATCH --account=ACCOUNT_NAME
 # Memory and time are set dynamically via sbatch --mem and --time in main pipeline script
 
 ################################################################################

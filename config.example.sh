@@ -129,6 +129,11 @@ TREATMENT_GROUPS=""
 # SLURM RESOURCE ALLOCATION
 # ============================================================================
 
+# SLURM account/allocation name (required by some clusters)
+# Leave empty if your cluster doesn't require an account specification
+# Example: SLURM_ACCOUNT="my_lab_allocation"
+SLURM_ACCOUNT=""
+
 # These settings can be customized based on your cluster requirements
 # Uncomment and modify as needed
 

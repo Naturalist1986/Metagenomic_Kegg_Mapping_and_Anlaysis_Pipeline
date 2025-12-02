@@ -4,6 +4,7 @@
 #SBATCH -c 32
 #SBATCH -t 6:00:00
 #SBATCH --mem=32G
+##SBATCH --account=ACCOUNT_NAME
 
 ################################################################################
 # SingleM Taxonomic Profiling Step
