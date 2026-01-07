@@ -50,15 +50,15 @@ def process_file(file_path):
                 'num_genomes': None
             }
         
-        # 2. Read the file
-        data = pd.read_csv(file_path, sep='\t', header=None, names=["KO", "Count"])
-        
-        # 3. Ensure "Count" column is numeric and drop invalid values
-        data["Count"] = pd.to_numeric(data["Count"], errors="coerce")
+        # 2. Read the file (with headers from sum_kegg_hits.py)
+        data = pd.read_csv(file_path, sep='\t', header=0)
+
+        # 3. Ensure "sum_num_hits" column is numeric and drop invalid values
+        data["sum_num_hits"] = pd.to_numeric(data["sum_num_hits"], errors="coerce")
         data = data.dropna()  # Remove rows with NaN values
-        
+
         # 4. Filter rows with single-copy KEGG numbers
-        filtered_data = data[data["KO"].isin(kegg_numbers)]
+        filtered_data = data[data["kegg_number"].isin(kegg_numbers)]
         if filtered_data.empty:
             print(f"No matching single-copy KEGGs in file: {file_path}")
             return {
@@ -67,7 +67,7 @@ def process_file(file_path):
             }
         
         # 5. Compute sum of hits per KEGG gene
-        sum_hits = filtered_data.groupby("KO")["Count"].sum()
+        sum_hits = filtered_data.groupby("kegg_number")["sum_num_hits"].sum()
         sum_hits = pd.to_numeric(sum_hits, errors="coerce").dropna()
         
         # 6. Calculate the mean of the distribution
